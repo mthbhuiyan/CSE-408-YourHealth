@@ -1,0 +1,114 @@
+{% extends 'layouts/default/page.html' %}
+
+{% load i18n %}
+
+{% block header %}
+
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        #map {
+			height: 800px;
+		}
+
+		#map img {
+			max-width: none;
+			min-width: 0px;
+			height: auto;
+		}
+
+		.mapboxgl-popup {
+			max-width: 400px;
+			font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+		}
+
+		#geocoder-container {
+			position: absolute;
+			top: 0;
+			width: 100%;
+			margin-top: 10px;
+		}
+
+		#geocoder-container > div {
+			min-width: 50%;
+			margin-left: 25%;
+		}
+		
+		#info {
+			display: block;
+			position: relative;
+			bottom: 0px;
+			margin: 0px auto;
+			padding: 10px;
+			border: none;
+			border-radius: 3px;
+			font-size: 12px;
+			text-align: center;
+			color: #222;
+			background: #fff;
+			width: 50%;
+			left: 50%;
+			-webkit-transform: translateX(-50%);
+			transform: translateX(-50%)
+		}
+    </style>
+{% endblock %}
+
+{% block content %}
+
+		<!-- Main Content-->
+		<div class="masthead">
+			<h3 class="text-muted">Map</h3>
+			<div class="row">
+				<div class="col-md-12">
+					<div id="map"></div>
+					<div id="geocoder-container"></div>
+				</div>
+			</div>
+		</div>
+
+{% endblock %}
+
+{% block footer %}
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoidGJodWl5YW4iLCJhIjoiY2p6azl3NGFpMDF1cjNma3hia2JvdXcwMSJ9.QbE7VQgzrkgX9qOp0aHlKQ';
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [90, 23.5], // starting position
+    zoom: 3 // starting zoom
+});
+
+// Add zoom and rotation controls to the map.
+map.addControl(new mapboxgl.NavigationControl());
+
+// Create geolocate control for tracking user location
+var geolocate = new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+});
+
+// Add geolocate control to the map.
+map.addControl(geolocate);
+
+// Send location to server on location update
+geolocate.on('geolocate', function(e) {
+	var lng = e.coords.longitude;
+    var lat = e.coords.latitude;
+	sendLatLng(lat, lng);
+});
+
+// Sending a GET request with values to server through AJAX
+function sendLatLng(lat, lng) {
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		console.log(this);
+	};
+	xhttp.open("GET", "{% url 'locations:update' %}" + "?lat=" + lat + "&lng=" + lng, true);
+	xhttp.send();
+}
+</script>
+
+{% endblock %}

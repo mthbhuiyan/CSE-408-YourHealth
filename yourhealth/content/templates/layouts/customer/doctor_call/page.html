@@ -1,0 +1,12 @@
+{% extends 'layouts/default/page.html' %}
+
+{% load i18n %}
+
+{% block navigation %}
+<script>
+    sessionStorage.setItem("role", 0);
+    sessionStorage.setItem("choice", 1);
+	
+    setRoleChoice();
+</script>
+{% endblock %}

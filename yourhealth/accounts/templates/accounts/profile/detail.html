@@ -1,0 +1,87 @@
+{% extends 'layouts/default/page.html' %}
+
+{% load bootstrap4 %}
+{% load i18n %}
+
+{% block content %}
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ object.username}}</h5>
+            <table class="table">
+                <tr>
+                    <th>{% trans 'First Name' %}</th>
+                    <td>{{ object.first_name }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans 'Last Name' %}</th>
+                    <td>{{ object.last_name }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans 'Email' %}</th>
+                    <td>{{ object.email }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans 'Phone' %}</th>
+                    <td>{{ object.phone_number }}</td>
+                </tr>
+            </table>
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                {% trans 'Edit' %}
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <a class="dropdown-item" href="{% url 'accounts:change_email' %}">{% trans 'Change Email' %}</a>
+                <a class="dropdown-item" href="{% url 'accounts:change_password' %}">{% trans 'Change Password' %}</a>
+                <a class="dropdown-item" href="{% url 'accounts:change_profile' %}">{% trans 'Change Profile' %}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if not request.user.has_profile %}
+                <a class="btn btn-secondary" type="button" href="{% url 'accounts:add_additional_info' %}">{% trans 'Add Additional Info' %}</a>
+            {% else %}
+                <h4>{% trans 'Additional Info' %}</h4>
+                <table class="table">
+                    <tr>
+                        <th>{% trans 'Gender' %}</th>
+                        <td>{{ object.profile.get_gender_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans 'Birthdate' %}</th>
+                        <td>{{ object.profile.birthdate }}</td>
+                    </tr>
+                </table>
+                <a class="btn btn-secondary" type="button" href="{% url 'accounts:change_additional_info' %}">{% trans 'Edit' %}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if not request.user.is_doctor %}
+                <a class="btn btn-secondary" type="button" href="{% url 'accounts:create_doctor' %}">{% trans 'Sign-up as Doctor' %}</a>
+            {% else %}
+                <h4>{% trans 'Additional Info' %}</h4>
+                <table class="table">
+                    <tr>
+                        <th>{% trans 'Active' %}</th>
+                        <td>{{ object.doctor.is_active }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans 'Degree' %}</th>
+                        <td>{{ object.profile.degree }}</td>
+                    </tr>
+                    <tr>
+                        <th>{% trans 'Institute' %}</th>
+                        <td>{{ object.profile.institute }}</td>
+                    </tr>
+                </table>
+                <a class="btn btn-secondary" type="button" href="{% url 'accounts:update_doctor' %}">{% trans 'Edit' %}</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

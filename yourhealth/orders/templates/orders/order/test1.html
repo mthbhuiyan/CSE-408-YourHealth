@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Place the geocoder input outside the map</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+<script src='https://unpkg.com/es6-promise@4.2.4/dist/es6-promise.auto.min.js'></script>
+<script src="https://unpkg.com/@mapbox/mapbox-sdk/umd/mapbox-sdk.min.js"></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.1/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.1/mapbox-gl-geocoder.css' type='text/css' />
+<style>
+    #info {
+        display: block;
+        position: absolute;
+        bottom: 0px;
+        margin: 0px auto;
+        padding: 10px;
+        border: none;
+        border-radius: 3px;
+        font-size: 12px;
+        text-align: center;
+        color: #222;
+        background: #fff;
+        width: 50%;
+        left: 50%;
+        -webkit-transform: translateX(-50%);
+        transform: translateX(-50%)
+    }
+    .geocoder {
+        position:absolute;
+        z-index:1;
+        width:50%;
+        left:50%;
+        margin-left:-25%;
+        top:20px;
+    }
+    .mapboxgl-ctrl-geocoder { min-width:100%; }
+    #map canvas {
+        cursor: pointer;
+    }
+</style>
+<div id='map'></div>
+<div id='info'>
+    <input id='addr' type='text' style='padding: 0px; border: none; margin: 0px; top: 0; left: 0; bottom: 0; right: 0; width: 100%;' readonly><br>
+    <input id='lat' type='text' style='padding: 0px; border: none; margin: 0px; top: 0; left: 0; bottom: 0; right: 0; width: 49%;' readonly>
+    <input id='lng' type='text' style='padding: 0px; border: none; margin: 0px; top: 0; left: 0; bottom: 0; right: 0; width: 49%;' readonly>
+</div>
+<div id='geocoder' class='geocoder'></div>
+
+<script>
+// 'id's of the hidden input fields
+var addrElement = document.getElementById('addr');
+var latElement = document.getElementById('lat');
+var lngElement = document.getElementById('lng');
+
+mapboxgl.accessToken = 'pk.eyJ1IjoidGJodWl5YW4iLCJhIjoiY2p6azl3NGFpMDF1cjNma3hia2JvdXcwMSJ9.QbE7VQgzrkgX9qOp0aHlKQ';
+// eslint-disable-next-line no-undef
+var mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [90.38808778689751, 23.726746886006048],
+    zoom: 15
+});
+
+var geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken,
+    mapboxgl: mapboxgl,
+    marker: false
+});
+
+var marker = new mapboxgl.Marker();
+
+// Add zoom and rotation controls to the map.
+map.addControl(new mapboxgl.NavigationControl());
+
+// Create geolocate control for tracking user location.
+var geolocate = new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+});
+
+// Add geolocate control to the map.
+map.addControl(geolocate);
+var geocoderElement = document.getElementById('geocoder');
+
+// Add geocoder to set location by searching places.
+geocoderElement.appendChild(geocoder.onAdd(map));
+var geocoderInputElement = geocoderElement.querySelector('input');
+geocoderInputElement.placeholder = 'Search or Click on the Map'
+
+// Set marker according to current position
+var updateOnGeolocate = false;
+var currentLngLat = [90.38808778689751, 23.726746886006048];
+geolocate.on('geolocate', function(e) {
+	currentLngLat = [e.coords.longitude, e.coords.latitude];
+	if(updateOnGeolocate) {
+		setupViewFromLngLat(currentLngLat);
+	}
+});
+geolocate.on('trackuserlocationstart', function() {
+	updateOnGeolocate = true;
+	if(geolocate._watchState == 'ACTIVE_LOCK') {
+		setupViewFromLngLat(currentLngLat);
+	}
+});
+geolocate.on('trackuserlocationend', function() {
+	updateOnGeolocate = false;
+});
+
+// Add marker at clicked location and set address input value to the address of nearest 'geocodeReverse'.
+map.on('click', function (e) {
+    setupViewFromLngLat([e.lngLat.lng, e.lngLat.lat]);
+    map.flyTo({center: e.lngLat});
+});
+
+// Change it to a grabbing when it starts drag.
+map.on('drag', function () {
+    map.getCanvas().style.cursor = 'grabbing';
+});
+
+// Change it back to a pointer when it stops drag.
+map.on('mouseup', function () {
+    map.getCanvas().style.cursor = 'pointer';
+});
+
+// Add marker at selected address and update 'lnglat' accordingly.
+geocoder.on('result', function(args) {
+    marker.setLngLat(args.result.geometry.coordinates).addTo(map);
+    addrElement.value = args.result.place_name;
+    latElement.value = args.result.geometry.coordinates[1];
+    lngElement.value = args.result.geometry.coordinates[0];
+});
+
+// Setup the marker and other views from 'lnglat'.
+function setupViewFromLngLat(lngLat) {
+    marker.setLngLat(lngLat).addTo(map);
+
+    mapboxClient.geocoding.reverseGeocode({
+        query: lngLat,
+        limit: 1
+    })
+        .send()
+        .then(function (response) {
+            if (response && response.body && response.body.features && response.body.features.length) {
+                var place_name = response.body.features[0].place_name;
+
+                geocoderInputElement.value = place_name;
+                addrElement.value = place_name;
+            }
+        });
+    
+    latElement.value = lngLat[1];
+    lngElement.value = lngLat[0];
+}
+</script>
+
+</body>
+</html>

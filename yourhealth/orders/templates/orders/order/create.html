@@ -1,0 +1,208 @@
+{% extends 'layouts/default/page.html' %}
+
+{% load i18n %}
+
+{% block header %}
+
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        #map {
+			height: 800px;
+		}
+
+		#map img {
+			max-width: none;
+			min-width: 0px;
+			height: auto;
+		}
+
+		.mapboxgl-popup {
+			max-width: 400px;
+			font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+		}
+
+        .geocoder {
+            position:relative;
+            z-index:1;
+            width:100%;
+        }
+        
+        .mapboxgl-ctrl-geocoder { min-width:100%; }
+
+        #map canvas {
+            cursor: pointer;
+        }
+
+        #instructions {
+            position: absolute;
+            margin: 20px;
+            width: 25%;
+            top: 0;
+            bottom: 20%;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            overflow-y: scroll;
+            font-family: sans-serif;
+            line-height: 2em;
+        }
+    </style>
+    
+<script src='https://unpkg.com/es6-promise@4.2.4/dist/es6-promise.auto.min.js'></script>
+<script src="https://unpkg.com/@mapbox/mapbox-sdk/umd/mapbox-sdk.min.js"></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.1/mapbox-gl-geocoder.min.js'></script>
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.4.1/mapbox-gl-geocoder.css' type='text/css' />
+
+{% endblock %}
+
+{% block content %}
+	<!-- Main Content-->
+	<div class="masthead">
+		<h3 class="text-muted">Map</h3>
+		<div class="row">
+			<div class="col-md-12">
+                <div id='map'></div>
+                <div id='instructions'>
+                    <div class="page-header">
+                        Your Order
+                    </div>
+                    <ul class="list-group">
+                        {% for item in cart %}
+                            <li class="list-group-item">
+                            {{ item.quantity }}x {{ item.product.name }}
+                            <span>BDT. {{ item.total_price }}</span>
+                            </li>
+                        {% endfor %}
+        
+                        <li class="list-group-item active">Total Cost: BDT. {{ cart.get_total_price }}</li>
+                    </ul>
+                    <br>
+                    <br>
+                    <h4 class="page-header">Checkout</h4>
+                    <div id='geocoder' class='geocoder'></div>
+                    <form action="." method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}<br>
+                        <input type="submit" class="btn btn-primary" value="Submit order">
+                    </form>
+                </div>
+			</div>
+		</div>
+	</div>
+
+{% endblock %}
+
+{% block footer %}
+
+<script>
+// 'id's of the hidden input fields
+var addrElement = document.getElementById('id_address');
+var latElement = document.getElementById('id_latitude');
+var lngElement = document.getElementById('id_longitude');
+
+mapboxgl.accessToken = 'pk.eyJ1IjoidGJodWl5YW4iLCJhIjoiY2p6azl3NGFpMDF1cjNma3hia2JvdXcwMSJ9.QbE7VQgzrkgX9qOp0aHlKQ';
+// eslint-disable-next-line no-undef
+var mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });
+
+var map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [90.38808778689751, 23.726746886006048],
+    zoom: 15
+});
+
+var geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken,
+    mapboxgl: mapboxgl,
+    marker: false
+});
+
+var marker = new mapboxgl.Marker();
+
+// Add zoom and rotation controls to the map.
+map.addControl(new mapboxgl.NavigationControl());
+
+// Create geolocate control for tracking user location.
+var geolocate = new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+});
+
+// Add geolocate control to the map.
+map.addControl(geolocate);
+var geocoderElement = document.getElementById('geocoder');
+
+// Add geocoder to set location by searching places.
+geocoderElement.appendChild(geocoder.onAdd(map));
+var geocoderInputElement = geocoderElement.querySelector('input');
+geocoderInputElement.placeholder = 'Search or Click on Map'
+
+// Set marker according to current position
+var updateOnGeolocate = false;
+var currentLngLat = [90.38808778689751, 23.726746886006048];
+geolocate.on('geolocate', function(e) {
+	currentLngLat = [e.coords.longitude, e.coords.latitude];
+	if(updateOnGeolocate) {
+		setupViewFromLngLat(currentLngLat);
+	}
+});
+geolocate.on('trackuserlocationstart', function() {
+	updateOnGeolocate = true;
+	if(geolocate._watchState == 'ACTIVE_LOCK') {
+		setupViewFromLngLat(currentLngLat);
+	}
+});
+geolocate.on('trackuserlocationend', function() {
+	updateOnGeolocate = false;
+});
+
+// Add marker at clicked location and set address input value to the address of nearest 'geocodeReverse'.
+map.on('click', function (e) {
+    setupViewFromLngLat([e.lngLat.lng, e.lngLat.lat]);
+    map.flyTo({center: e.lngLat});
+});
+
+// Change it to a grabbing when it starts drag.
+map.on('drag', function () {
+    map.getCanvas().style.cursor = 'grabbing';
+});
+
+// Change it back to a pointer when it stops drag.
+map.on('mouseup', function () {
+    map.getCanvas().style.cursor = 'pointer';
+});
+
+// Add marker at selected address and update 'lnglat' accordingly.
+geocoder.on('result', function(args) {
+    marker.setLngLat(args.result.geometry.coordinates).addTo(map);
+    addrElement.value = args.result.place_name;
+    latElement.value = args.result.geometry.coordinates[1];
+    lngElement.value = args.result.geometry.coordinates[0];
+});
+
+// Setup the marker and other views from 'lnglat'.
+function setupViewFromLngLat(lngLat) {
+    marker.setLngLat(lngLat).addTo(map);
+
+    mapboxClient.geocoding.reverseGeocode({
+        query: lngLat,
+        limit: 1
+    })
+        .send()
+        .then(function (response) {
+            if (response && response.body && response.body.features && response.body.features.length) {
+                var place_name = response.body.features[0].place_name;
+
+                geocoderInputElement.value = place_name;
+                addrElement.value = place_name;
+            }
+        });
+    
+    latElement.value = lngLat[1];
+    lngElement.value = lngLat[0];
+}
+</script>
+
+{% endblock %}

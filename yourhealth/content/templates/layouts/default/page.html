@@ -1,0 +1,253 @@
+{% load staticfiles %}
+{% load bootstrap4 %}
+{% load i18n %}
+
+{% get_current_language as language_code %}
+
+<!DOCTYPE html>
+<html lang="{{ language_code }}">
+<head>
+
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="YourHealth: all about your health">
+    <meta name="author" content="Tawhidul Hasan">
+
+    <link rel="icon" href="{% static 'favicon.ico' %}">
+
+    <title>
+        {% block title %}
+            Yourhealth
+        {% endblock %}
+    </title>
+
+    <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+
+	<style>
+	#page-container {
+		position: relative;
+		min-height: 100vh;
+	}
+
+	#content-wrap {
+		padding-bottom: 2.5rem;    /* Footer height */
+	}
+
+	#footer {
+		width: 100%;
+		height: 2.5rem;            /* Footer height */
+	}
+	</style>
+	
+	{% block header %}
+    {% endblock %}
+
+</head>
+
+<body>
+
+<!-- Container -->
+<div class="main-wrapper">
+
+		<!-- Masthead -->
+		<div class="header">
+
+			<!-- Navigation -->
+			<nav class="navbar navbar-expand-md navbar-dark bg-dark static-top">
+
+				<a class="navbar-brand" href="/">{% trans 'Home' %}</a>
+
+				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+
+				<div class="collapse navbar-collapse" id="navbarsExampleDefault">
+					<ul class="navbar-nav mr-auto" id="customer-shop" style="display: none;">
+						<li class="nav-item">
+							<a class="nav-link" href="{% url 'shop:product_list' %}">{% trans 'Shop' %}</a>
+						</li>
+						<li class="nav-item">
+							{% with totail_items=cart|length %}
+								{% if cart|length > 0 %}
+									<a class="nav-link" href="{% url 'cart:cart_detail' %}">
+										Cart: {{ totail_items }} item {{ totail_items|pluralize }},
+										BDT. {{ cart.get_total_price }}
+									</a>
+								{% else %}
+									<a class="nav-link disabled">
+										{% trans 'Cart: empty' %}
+									</a>
+								{% endif %}
+							{% endwith %}
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="{% url 'orders:order_list' %}">{% trans 'History' %}</a>
+						</li>
+					</ul>
+					<ul class="navbar-nav mr-auto" id="customer-doctor-call" style="display: none;">
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'Doctor Call' %}</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'History' %}</a>
+						</li>
+					</ul>
+					<ul class="navbar-nav mr-auto" id="patient" style="display: none;">
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'Health Record' %}</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'Medical History' %}</a>
+						</li>
+					</ul>
+					<ul class="navbar-nav mr-auto" id="doctor" style="display: none;">
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'Doctor Call' %}</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'Prescription' %}</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'History' %}</a>
+						</li>
+					</ul>
+					<ul class="navbar-nav mr-auto" id="deliveryman" style="display: none;">
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'Medicine Order' %}</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="">{% trans 'History' %}</a>
+						</li>
+					</ul>
+
+					<ul class="navbar-nav">
+						<li class="nav-item">
+							<select class="form-control" id="choice" style="display: none;">
+								<option value="">{% trans 'Shop' %}</option>
+								<option value="">{% trans 'Doctor Call' %}</option>
+							</select>
+						</li>
+						<li class="nav-item">
+							<select class="form-control" id="role">
+								<option value="">{% trans 'Customer' %}</option>
+								<option value="">{% trans 'Patient' %}</option>
+								<option value="">{% trans 'Doctor' %}</option>
+								<option value="">{% trans 'Deliveryman' %}</option>
+							</select>
+						</li>
+						{% if request.user.is_authenticated %}
+							<li class="nav-item dropdown">
+								<a class="btn btn-secondary dropdown-toggle" href="#" data-toggle="dropdown">
+									{{ request.user.username }}
+								</a>
+								<div class="dropdown-menu dropdown-menu-right">
+									<a class="dropdown-item" href="{% url 'accounts:profile' %}">{% trans 'Profile' %}</a>
+									<a class="dropdown-item" href="{% url 'accounts:log_out' %}">{% trans 'Log out' %}</a>
+								</div>
+							</li>
+						{% else %}
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'accounts:log_in' %}">{% trans 'Log in' %}</a>
+							</li>
+							<li class="nav-item">
+								<a class="nav-link" href="{% url 'accounts:sign_up' %}">{% trans 'Create an account' %}</a>
+							</li>
+						{% endif %}
+						<li class="nav-item">
+							<a class="nav-link" href="{% url 'change_language' %}">{% trans 'Change language' %}</a>
+						</li>
+					</ul>
+				</div>
+
+			</nav>
+		</div>
+        <div id="content-wrap" class="container-fluid mt-3">
+			{% bootstrap_messages %}
+		
+			{% block content %}
+				No content.
+			{% endblock %}
+		</div>
+
+		<!-- Footer -->
+		<footer class="page-footer font-small bg-dark text-white-50 fixed-bottom">
+
+			<!-- Copyright -->
+			<div class="footer-copyright text-center">© 2019 Copyright:
+				We
+			</div>
+			<!-- Copyright -->
+		
+		</footer>
+		<!-- Footer -->
+	</div> <!-- /container -->
+<script src="{% static 'vendor/jquery/jquery-3.3.1.min.js' %}"></script>
+<script src="{% static 'vendor/popper/popper.min.js' %}"></script>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+
+<script src="{% static 'js/ie10-viewport-bug-workaround.js' %}"></script>
+<script>
+	function setRoleChoice() {
+		var navElements = [
+			document.getElementById("patient"),
+			document.getElementById("doctor"),
+			document.getElementById("deliveryman")
+		];
+		
+		var selectedIndex = sessionStorage.getItem("role");
+
+		document.getElementById("role").selectedIndex = selectedIndex;
+
+		if (selectedIndex == 0) {
+			setChoice();
+		} else {
+			navElements[selectedIndex-1].style.display = "inherit";
+		}
+	}
+
+	function setChoice() {
+		document.getElementById("choice").style.display = "inherit";
+
+		var navChoices = [
+			document.getElementById("customer-shop"),
+			document.getElementById("customer-doctor-call")
+		];
+
+		var choiceIndex = sessionStorage.getItem("choice");
+
+		document.getElementById("choice").selectedIndex = choiceIndex;
+		navChoices[choiceIndex].style.display = "inherit";
+	}
+
+	document.getElementById("role").onchange = function() {
+		sessionStorage.setItem("role", this.selectedIndex);
+        window.location.href = this.value;
+    };
+
+	document.getElementById("choice").onchange = function() {
+		sessionStorage.setItem("choice", this.selectedIndex);
+        window.location.href = this.value;
+    };
+</script>
+{% block navigation %}
+<script>
+	var defaultRole = 0;
+	var defaultChoice = 0;
+
+	if (sessionStorage.getItem("role") == null) {
+		sessionStorage.setItem("role", defaultRole);
+	}
+
+	if (sessionStorage.getItem("choice") == null) {
+		sessionStorage.setItem("choice", defaultChoice);
+	}
+	
+	setRoleChoice();
+</script>
+{% endblock %}
+{% block footer %}
+{% endblock %}
+</body>
+</html>

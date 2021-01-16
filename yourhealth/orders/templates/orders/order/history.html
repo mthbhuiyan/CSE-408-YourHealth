@@ -1,0 +1,32 @@
+{% extends 'layouts/default/page.html' %}
+
+{% load bootstrap4 %}
+{% load i18n %}
+
+{% block content %}
+
+
+<h4>Orders</h1>
+<ul>
+</ul>
+    {% for order in object_list %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{% trans 'Order: ' %}{{ order.id }}</h5>
+            <table class="table">
+                <tr>
+                    <th>{% trans 'Status' %}</th>
+                    <td>{{ order.get_status_display }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{% trans 'No articles yet.' %}</h5>
+        </div>
+    </div>
+    {% endfor %}
+
+{% endblock %}

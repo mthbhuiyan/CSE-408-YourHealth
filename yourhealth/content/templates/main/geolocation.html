@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Locate the user</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.2.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+			margin:0;
+			padding:0;
+		}
+		
+        #map {
+			position:absolute;
+			top:0;
+			bottom:0;
+			width:100%;
+		}
+		
+		#info {
+			display: block;
+			position: absolute;
+			bottom: 0px;
+			margin: 0px auto;
+			padding: 10px;
+			border: none;
+			border-radius: 3px;
+			font-size: 12px;
+			text-align: center;
+			color: #222;
+			background: #fff;
+			width: 50%;
+			left: 50%;
+			-webkit-transform: translateX(-50%);
+			transform: translateX(-50%)
+		}
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<div id='info'>
+	<label id='demo'></label>
+	<br>
+	<label id='demo2'></label>
+</div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoidGJodWl5YW4iLCJhIjoiY2p6azl3NGFpMDF1cjNma3hia2JvdXcwMSJ9.QbE7VQgzrkgX9qOp0aHlKQ';
+var map = new mapboxgl.Map({
+    container: 'map', // container id
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [-96, 37.8], // starting position
+    zoom: 3 // starting zoom
+});
+
+// Create geolocate control for tracking user location
+var geolocate = new mapboxgl.GeolocateControl({
+    positionOptions: {
+        enableHighAccuracy: true
+    },
+    trackUserLocation: true
+});
+
+// Add geolocate control to the map.
+map.addControl(geolocate);
+
+// Send location to server on location update
+geolocate.on('geolocate', function(e) {
+	var lng = e.coords.longitude;
+    var lat = e.coords.latitude;
+	sendLatLng(lat, lng);
+});
+
+var demo = document.getElementById("demo");
+var demo2 = document.getElementById("demo2");
+
+// Sending a GET request with values to server through AJAX
+function sendLatLng(lat, lng) {
+	demo.innerHTML = "Latitude: " + lat + "<br>Longitude: " + lng;
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			demo2.innerHTML = this.responseText;
+		}
+	};
+	xhttp.open("GET", "{% url 'locations:update' %}" + "?lat=" + lat + "&lng=" + lng, true);
+	xhttp.send();
+}
+</script>
+
+</body>
+</html>
